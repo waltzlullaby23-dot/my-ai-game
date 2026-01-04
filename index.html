@@ -8,55 +8,25 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;500;900&display=swap');
-        
         :root { --primary: #00f2ff; --bg: #0d1117; }
         body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
-
         .glass-card { background: rgba(22, 27, 34, 0.8); border: 1px solid #30363d; border-radius: 2rem; }
-        
-        /* 數字穩定器與縮小修正 */
-        .digital-num { 
-            font-family: 'Orbitron', sans-serif; 
-            font-variant-numeric: tabular-nums; 
-            display: inline-block;
-            white-space: nowrap;
-        }
+        .digital-num { font-family: 'Orbitron', sans-serif; font-variant-numeric: tabular-nums; display: inline-block; white-space: nowrap; }
 
-        /* 修正：淨收益文字自動縮放防止溢出 */
-        .income-container {
-            max-width: 100%;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-        }
-        #income-val {
-            font-size: clamp(1.5rem, 8vw, 2.75rem); /* 動態縮放：最小 1.5rem，最大 2.75rem */
-            line-height: 1;
-            transition: all 0.3s ease;
-        }
+        /* 修正：淨收益文字自動縮放防止溢出，並略為縮小 */
+        .income-container { max-width: 100%; overflow: hidden; display: flex; align-items: center; }
+        #income-val { font-size: clamp(1.2rem, 6vw, 2.4rem); line-height: 1; transition: all 0.3s ease; }
 
-        .input-field {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #30363d;
-            border-radius: 0.75rem;
-            padding: 0.75rem;
-            width: 100%;
-            font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
-            outline: none;
-        }
-
+        .input-field { background: rgba(255, 255, 255, 0.05); border: 1px solid #30363d; border-radius: 0.75rem; padding: 0.75rem; width: 100%; font-family: 'Orbitron', sans-serif; color: var(--primary); outline: none; }
         .status-pill { padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 900; }
         .status-green { background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid #238636; }
         .status-yellow { background: rgba(187, 128, 9, 0.2); color: #d29922; border: 1px solid #9e6a03; }
-
         .strategy-item { transition: 0.2s; cursor: pointer; border: 1px solid #30363d; }
         .strategy-item.active { border-color: var(--primary); background: rgba(0, 242, 255, 0.05); }
     </style>
 </head>
 <body class="p-4 md:p-10">
     <div class="max-w-6xl mx-auto space-y-6">
-        
         <header class="glass-card p-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center font-black italic">E</div>
@@ -115,24 +85,22 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div id="strategy-grid" class="contents">
-                    </div>
-            </div>
+            <div id="strategy-grid" class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                </div>
             
             <section class="lg:col-span-4 glass-card p-6 space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="text-[9px] text-slate-500 font-bold block mb-1">契約容量 (kW)</label>
-                        <input type="number" id="contract-kw" value="1000" class="input-field text-md font-bold">
+                        <input type="number" id="contract-kw" value="1000" oninput="calculateAndSync()" class="input-field text-md font-bold">
                     </div>
                     <div>
                         <label class="text-[9px] text-slate-500 font-bold block mb-1">預計抑低容量 (kW)</label>
-                        <input type="number" id="reduce-kw" value="200" class="input-field text-md font-bold">
+                        <input type="number" id="reduce-kw" value="200" oninput="calculateAndSync()" class="input-field text-md font-bold">
                     </div>
                 </div>
                 <button onclick="fetchTaipower()" class="w-full bg-slate-100 text-black py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white active:scale-95 transition-all">
-                    更新並同步台電官網數據
+                    更新並同步數據
                 </button>
             </section>
         </div>
@@ -152,18 +120,10 @@
                 labels: ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00'],
                 datasets: [{
                     data: [14.2, 13.5, 9.8, 11.2, 10.5, 12.1],
-                    borderColor: '#00f2ff',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: 'rgba(0, 242, 255, 0.05)'
+                    borderColor: '#00f2ff', borderWidth: 2, tension: 0.4, fill: true, backgroundColor: 'rgba(0, 242, 255, 0.05)'
                 }]
             },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 9 } } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 9 } } } } }
         });
 
         async function fetchTaipower() {
@@ -171,29 +131,34 @@
             try {
                 const res = await fetch(api_url);
                 const data = await res.json();
-                updateUI(parseFloat(data.reserve_rate));
+                calculateAndSync(parseFloat(data.reserve_rate));
             } catch (e) {
-                updateUI(14.5); // 離峰時間預設值
+                calculateAndSync(14.5);
             }
         }
 
-        function updateUI(rate) {
+        // 核心修正：加入契約容量連動公式
+        function calculateAndSync(overrideRate = null) {
+            const rate = overrideRate || parseFloat(document.getElementById('reserve-val').innerText) || 14.5;
+            
+            // 更新燈號
             const valEl = document.getElementById('reserve-val');
             const lightEl = document.getElementById('status-light');
             valEl.innerText = rate.toFixed(1) + "%";
-            
-            if (rate >= 10) {
-                lightEl.innerText = "供電充裕"; lightEl.className = "status-pill status-green";
-            } else {
-                lightEl.innerText = "供電吃緊"; lightEl.className = "status-pill status-yellow";
-            }
+            if (rate >= 10) { lightEl.innerText = "供電充裕"; lightEl.className = "status-pill status-green"; }
+            else { lightEl.innerText = "供電吃緊"; lightEl.className = "status-pill status-yellow"; }
 
+            // 參數讀取
+            const contractKW = parseFloat(document.getElementById('contract-kw').value) || 0;
             const reduceKW = parseFloat(document.getElementById('reduce-kw').value) || 0;
             const activePlans = plans.filter(p => p.active);
             const planProfit = activePlans.reduce((sum, p) => sum + p.profit, 0);
-            
-            // 淨收益模擬計算
-            const totalProfit = (reduceKW * 8.5 * 6 * 1.05) + planProfit;
+
+            // 新公式：抑低收益 + (契約容量 * 基本費折減系數 0.2) + 方案收益
+            const baseProfit = (reduceKW * 8.5 * 6 * 1.05);
+            const contractBonus = (contractKW * 0.2 * 6); // 模擬契約容量對整體電費扣減的貢獻
+            const totalProfit = baseProfit + contractBonus + planProfit;
+
             animateValue("income-val", totalProfit, "$ ");
             document.getElementById('co2-val').innerText = ((reduceKW * 6 * 0.495) + activePlans.reduce((sum, p) => sum + p.co2, 0)).toFixed(1);
             document.getElementById('freq-val').innerText = (59.98 + Math.random()*0.04).toFixed(2) + " Hz";
@@ -218,7 +183,7 @@
         function togglePlan(idx) {
             plans[idx].active = !plans[idx].active;
             renderPlans();
-            fetchTaipower();
+            calculateAndSync();
         }
 
         function animateValue(id, end, prefix = "") {
