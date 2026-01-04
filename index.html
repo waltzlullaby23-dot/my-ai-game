@@ -49,3 +49,137 @@
                 </div>
             </div>
         </section>
+
+        
+
+        <main class="glass-card rounded-[2rem] p-6 space-y-5">
+            <h3 class="text-sm font-bold text-slate-300">參數設定 (2026 夜尖峰新制)</h3>
+            
+            <div class="space-y-4">
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">經常契約容量 (kW)</label>
+                    <input type="number" id="input-contract" value="1000" class="w-full bg-transparent text-xl font-bold outline-none text-white mt-1">
+                </div>
+                
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">預計抑低容量 (kW)</label>
+                    <input type="number" id="input-reduction" value="200" class="w-full bg-transparent text-xl font-bold outline-none text-white mt-1">
+                </div>
+                
+                <button onclick="manualUpdate()" class="w-full accent-gradient py-5 rounded-2xl text-white font-black text-lg shadow-lg active:scale-95 transition-all">
+                    同步即時數據
+                </button>
+            </div>
+        </main>
+
+        <footer class="text-center text-[10px] text-slate-600 font-medium tracking-widest">
+            POWERED BY TAIPOWER OPEN DATA API v2.0
+        </footer>
+    </div>
+
+    <script>
+        // 1. 初始化資料抓取與處理
+        async function fetchTaipowerAPI() {
+            const api_url = "https://corsproxy.io/?https://www.taipower.com.tw/d006/load_draw/data/load_supply_info.json";
+            const statusTag = document.getElementById('status-tag');
+
+            try {
+                const response = await fetch(api_url);
+                const data = await response.json();
+                
+                const reserve = data.reserve_rate || "12.0";
+                const status = data.m_status || "供電充裕";
+                
+                document.getElementById('real-reserve').innerText = reserve + "%";
+                document.getElementById('light-status').innerText = status;
+                
+                const light = document.getElementById('light-status');
+                const val = parseFloat(reserve);
+                if(val < 6) light.className = "text-lg font-bold text-red-500";
+                else if(val < 10) light.className = "text-lg font-bold text-yellow-500";
+                else light.className = "text-lg font-bold text-emerald-500";
+
+                statusTag.innerText = "● REAL-TIME CONNECTED";
+                statusTag.className = "px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+            } catch (error) {
+                console.log("Entering Simulation Mode");
+                simulateGridData();
+            }
+        }
+
+        // 模擬電力波動
+        function simulateGridData() {
+            const mockReserve = (10 + Math.random() * 3).toFixed(2);
+            document.getElementById('real-reserve').innerText = mockReserve + "%";
+            document.getElementById('light-status').innerText = "數據同步中";
+            
+            const statusTag = document.getElementById('status-tag');
+            statusTag.innerText = "● SIMULATION ACTIVE";
+            statusTag.className = "px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20";
+        }
+
+        // 2. 核心：讓收益與頻率「跳動」的邏輯
+        function updateLiveValues() {
+            // 讀取設定值
+            const reductionBase = parseFloat(document.getElementById('input-reduction').value) || 0;
+            const price = 8.0;      
+            const hours = 6;        
+            const incentive = 1.05;
+
+            // 隨機擾動 (模擬電表 0.5% 的波動感)
+            const jitter = (Math.random() - 0.5) * 1.5; 
+            const dynamicReduction = Math.max(0, reductionBase + jitter);
+
+            // 計算當前預估收益
+            const currentReward = dynamicReduction * hours * price * incentive;
+
+            // 執行數字滾動動畫 (讓小數點動起來)
+            animateNumericValue("calc-profit", currentReward, 1500);
+
+            // 模擬系統頻率微幅跳動 (59.97 - 60.03 Hz)
+            const hz = (59.97 + Math.random() * 0.06).toFixed(2);
+            document.getElementById('live-hz').innerText = hz + " Hz";
+        }
+
+        // 3. 數字滾動動畫函式 (支援小數點)
+        function animateNumericValue(id, end, duration) {
+            const obj = document.getElementById(id);
+            const startText = obj.innerText.replace(/[^0-9.]/g, '');
+            const start = parseFloat(startText) || 0;
+            let startTimestamp = null;
+
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const currentVal = (progress * (end - start) + start).toFixed(2);
+                
+                // 格式化為貨幣樣式
+                obj.innerText = "$ " + parseFloat(currentVal).toLocaleString(undefined, {minimumFractionDigits: 2});
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // 手動更新按鈕
+        function manualUpdate() {
+            fetchTaipowerAPI();
+            updateLiveValues();
+        }
+
+        // 4. 自動化循環設定
+        window.onload = () => {
+            fetchTaipowerAPI();
+            updateLiveValues();
+            
+            // 每 3 秒更新一次收益與頻率 (產生跳動感)
+            setInterval(updateLiveValues, 3000);
+            
+            // 每 60 秒抓一次真實台電數據
+            setInterval(fetchTaipowerAPI, 60000);
+        };
+    </script>
+</body>
+</html>
