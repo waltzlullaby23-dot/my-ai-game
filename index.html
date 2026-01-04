@@ -3,182 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 電力交易管家 Pro | 終極動態版</title>
+    <title>2026 電力儀表板 | VPP Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #0f172a; color: #f8fafc; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .accent-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
-        .value-font { font-family: 'Monaco', 'Consolas', monospace; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background: #05070a; color: #e2e8f0; }
+        .digital { font-family: 'Orbitron', sans-serif; }
+        .dashboard-grid { background-image: radial-gradient(circle, #1e293b 1px, transparent 1px); background-size: 30px 30px; }
+        .neon-border { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); border: 1px solid rgba(99, 102, 241, 0.4); }
+        .neon-text-green { text-shadow: 0 0 10px rgba(34, 197, 94, 0.6); }
+        .neon-text-orange { text-shadow: 0 0 10px rgba(249, 115, 22, 0.6); }
+        
+        /* 儀表板動畫 */
+        @keyframes gauge-load { from { stroke-dasharray: 0 100; } }
+        .gauge-path { transition: stroke-dasharray 1s ease-out; }
     </style>
 </head>
-<body class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+<body class="min-h-screen dashboard-grid p-4 flex flex-col items-center">
 
     <div class="max-w-md w-full space-y-6">
-        <header class="flex justify-between items-center">
+        <header class="flex justify-between items-center py-2">
             <div>
-                <h1 class="text-2xl font-black tracking-tighter text-white">ENERGY <span class="text-indigo-400">PRO</span></h1>
-                <p class="text-[10px] text-slate-400 uppercase tracking-widest">Real-time VPP Interface</p>
+                <h1 class="text-xl font-black tracking-widest text-indigo-400 digital">GRID_COMMAND_v2.6</h1>
+                <div id="status-line" class="text-[10px] text-emerald-500 digital animate-pulse">● SYSTEM_ACTIVE_STABLE</div>
             </div>
-            <div id="status-tag" class="px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/20">
-                系統初始化...
+            <div class="text-right">
+                <p class="text-[10px] text-slate-500 digital" id="current-time">00:00:00</p>
             </div>
         </header>
 
-        <section class="glass-card rounded-[2.5rem] p-8 shadow-2xl space-y-8">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">全台備轉容量率</p>
-                    <div id="real-reserve" class="text-5xl font-black text-white italic transition-all italic">--%</div>
-                </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">台電燈號</p>
-                    <div id="light-status" class="text-lg font-bold text-slate-500">Connecting</div>
+        <section class="bg-slate-900/80 backdrop-blur-xl rounded-[3rem] p-8 neon-border relative flex flex-col items-center">
+            
+            <div class="relative h-64 w-64">
+                <svg viewBox="0 0 36 36" class="h-full w-full -rotate-90">
+                    <path class="stroke-slate-800" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path id="gauge-circle" class="gauge-path stroke-indigo-500" stroke-width="3" stroke-linecap="round" fill="none" stroke-dasharray="75, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase">全台備轉率</p>
+                    <span id="real-reserve" class="text-5xl font-black digital italic">--%</span>
+                    <span id="light-status" class="text-[10px] font-bold mt-2 px-2 py-0.5 rounded border border-slate-700">Connecting...</span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 border-t border-slate-700/50 pt-6">
-                <div>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">即時系統頻率</p>
-                    <p id="live-hz" class="text-2xl font-black text-indigo-400 value-font">60.00 Hz</p>
+            <div class="w-full grid grid-cols-2 gap-8 mt-6 pt-6 border-t border-slate-800">
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 digital uppercase mb-1">Grid Freq</p>
+                    <p id="live-hz" class="text-xl font-bold digital text-indigo-400">60.00 <span class="text-[10px]">Hz</span></p>
                 </div>
-                <div>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">今日預估收益</p>
-                    <p id="calc-profit" class="text-2xl font-black text-orange-400 value-font">$ 0.00</p>
+                <div class="text-center border-l border-slate-800">
+                    <p class="text-[10px] text-slate-500 digital uppercase mb-1">Est. Income</p>
+                    <p id="calc-profit" class="text-xl font-bold digital text-orange-400 neon-text-orange">$ 0</p>
                 </div>
             </div>
         </section>
 
         
 
-        <main class="glass-card rounded-[2rem] p-6 space-y-5">
-            <h3 class="text-sm font-bold text-slate-300">參數設定 (2026 夜尖峰新制)</h3>
-            
-            <div class="space-y-4">
-                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase">經常契約容量 (kW)</label>
-                    <input type="number" id="input-contract" value="1000" class="w-full bg-transparent text-xl font-bold outline-none text-white mt-1">
-                </div>
-                
-                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase">預計抑低容量 (kW)</label>
-                    <input type="number" id="input-reduction" value="200" class="w-full bg-transparent text-xl font-bold outline-none text-white mt-1">
-                </div>
-                
-                <button onclick="manualUpdate()" class="w-full accent-gradient py-5 rounded-2xl text-white font-black text-lg shadow-lg active:scale-95 transition-all">
-                    同步即時數據
-                </button>
+        <main class="bg-slate-900/50 backdrop-blur-md rounded-3xl p-6 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between px-1">
+                <h3 class="text-xs font-bold text-slate-400 digital uppercase">User_Parameters</h3>
+                <span class="text-[10px] text-slate-600 font-mono">2026_PEAK_6H</span>
             </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-black/40 p-3 rounded-2xl border border-slate-800">
+                    <label class="text-[9px] font-bold text-slate-500 uppercase">Contract(kW)</label>
+                    <input type="number" id="input-contract" value="1000" class="w-full bg-transparent text-lg font-bold outline-none text-white digital">
+                </div>
+                <div class="bg-black/40 p-3 rounded-2xl border border-slate-800">
+                    <label class="text-[9px] font-bold text-slate-500 uppercase">Reduce(kW)</label>
+                    <input type="number" id="input-reduction" value="200" class="w-full bg-transparent text-lg font-bold outline-none text-white digital">
+                </div>
+            </div>
+            
+            <button onclick="manualSync()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all active:scale-95 shadow-lg shadow-indigo-900/20 digital tracking-widest text-sm">
+                MANUAL_SYNC_DATABASE
+            </button>
         </main>
 
-        <footer class="text-center text-[10px] text-slate-600 font-medium tracking-widest">
-            POWERED BY TAIPOWER OPEN DATA API v2.0
+        <footer class="text-center">
+            <p class="text-[9px] text-slate-700 digital">SYSTEM_ORIGIN: TAIPOWER_API_SVR_01</p>
         </footer>
     </div>
 
     <script>
-        // 1. 初始化資料抓取與處理
-        async function fetchTaipowerAPI() {
-            const api_url = "https://corsproxy.io/?https://www.taipower.com.tw/d006/load_draw/data/load_supply_info.json";
-            const statusTag = document.getElementById('status-tag');
+        // 即時時間更新
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-time').innerText = now.toTimeString().split(' ')[0];
+        }
+        setInterval(updateClock, 1000);
 
+        // 核心邏輯：API 與視覺更新
+        async function fetchTaipower() {
+            const api_url = "https://corsproxy.io/?https://www.taipower.com.tw/d006/load_draw/data/load_supply_info.json";
+            
             try {
                 const response = await fetch(api_url);
                 const data = await response.json();
-                
-                const reserve = data.reserve_rate || "12.0";
-                const status = data.m_status || "供電充裕";
-                
-                document.getElementById('real-reserve').innerText = reserve + "%";
-                document.getElementById('light-status').innerText = status;
-                
-                const light = document.getElementById('light-status');
-                const val = parseFloat(reserve);
-                if(val < 6) light.className = "text-lg font-bold text-red-500";
-                else if(val < 10) light.className = "text-lg font-bold text-yellow-500";
-                else light.className = "text-lg font-bold text-emerald-500";
+                const reserve = parseFloat(data.reserve_rate || 15);
+                const status = data.m_status || "NORMAL";
 
-                statusTag.innerText = "● REAL-TIME CONNECTED";
-                statusTag.className = "px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+                updateUI(reserve, status);
             } catch (error) {
-                console.log("Entering Simulation Mode");
-                simulateGridData();
+                // 失敗時使用微幅跳動數據
+                const mock = (12 + (Math.random() * 3)).toFixed(2);
+                updateUI(mock, "SIMULATING");
             }
         }
 
-        // 模擬電力波動
-        function simulateGridData() {
-            const mockReserve = (10 + Math.random() * 3).toFixed(2);
-            document.getElementById('real-reserve').innerText = mockReserve + "%";
-            document.getElementById('light-status').innerText = "數據同步中";
+        function updateUI(reserve, status) {
+            document.getElementById('real-reserve').innerText = reserve + "%";
+            document.getElementById('light-status').innerText = status;
             
-            const statusTag = document.getElementById('status-tag');
-            statusTag.innerText = "● SIMULATION ACTIVE";
-            statusTag.className = "px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20";
+            // 更新圓環進度 (Max 設為 25% 備轉比較明顯)
+            const percentage = Math.min(100, (reserve / 25) * 100);
+            const gauge = document.getElementById('gauge-circle');
+            gauge.setAttribute('stroke-dasharray', `${percentage}, 100`);
+
+            // 顏色切換邏輯
+            if(reserve < 6) {
+                gauge.setAttribute('class', 'gauge-path stroke-red-500');
+                document.getElementById('real-reserve').className = 'text-5xl font-black digital italic text-red-500 neon-text-orange';
+            } else if(reserve < 10) {
+                gauge.setAttribute('class', 'gauge-path stroke-yellow-500');
+                document.getElementById('real-reserve').className = 'text-5xl font-black digital italic text-yellow-500';
+            } else {
+                gauge.setAttribute('class', 'gauge-path stroke-indigo-500');
+                document.getElementById('real-reserve').className = 'text-5xl font-black digital italic text-white';
+            }
         }
 
-        // 2. 核心：讓收益與頻率「跳動」的邏輯
-        function updateLiveValues() {
-            // 讀取設定值
-            const reductionBase = parseFloat(document.getElementById('input-reduction').value) || 0;
-            const price = 8.0;      
-            const hours = 6;        
-            const incentive = 1.05;
-
-            // 隨機擾動 (模擬電表 0.5% 的波動感)
-            const jitter = (Math.random() - 0.5) * 1.5; 
-            const dynamicReduction = Math.max(0, reductionBase + jitter);
-
-            // 計算當前預估收益
-            const currentReward = dynamicReduction * hours * price * incentive;
-
-            // 執行數字滾動動畫 (讓小數點動起來)
-            animateNumericValue("calc-profit", currentReward, 1500);
-
-            // 模擬系統頻率微幅跳動 (59.97 - 60.03 Hz)
+        function calculateProfit() {
+            const reduction = parseFloat(document.getElementById('input-reduction').value) || 0;
+            const price = 8.0, hours = 6, incentive = 1.05;
+            
+            // 加入微幅隨機擾動讓數字每一秒都在動
+            const jitter = (Math.random() - 0.5) * 1.2;
+            const target = (reduction + jitter) * hours * price * incentive;
+            
+            animateValue("calc-profit", target, 800);
+            
+            // 頻率跳動
             const hz = (59.97 + Math.random() * 0.06).toFixed(2);
-            document.getElementById('live-hz').innerText = hz + " Hz";
+            document.getElementById('live-hz').innerText = hz;
         }
 
-        // 3. 數字滾動動畫函式 (支援小數點)
-        function animateNumericValue(id, end, duration) {
+        function animateValue(id, end, duration) {
             const obj = document.getElementById(id);
-            const startText = obj.innerText.replace(/[^0-9.]/g, '');
-            const start = parseFloat(startText) || 0;
+            const start = parseFloat(obj.innerText.replace(/[^0-9.]/g, '')) || 0;
             let startTimestamp = null;
-
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const currentVal = (progress * (end - start) + start).toFixed(2);
-                
-                // 格式化為貨幣樣式
-                obj.innerText = "$ " + parseFloat(currentVal).toLocaleString(undefined, {minimumFractionDigits: 2});
-                
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
+                const val = (progress * (end - start) + start).toFixed(2);
+                obj.innerText = "$ " + parseFloat(val).toLocaleString(undefined, {minimumFractionDigits: 2});
+                if (progress < 1) window.requestAnimationFrame(step);
             };
             window.requestAnimationFrame(step);
         }
 
-        // 手動更新按鈕
-        function manualUpdate() {
-            fetchTaipowerAPI();
-            updateLiveValues();
+        function manualSync() {
+            fetchTaipower();
+            calculateProfit();
         }
 
-        // 4. 自動化循環設定
+        // 初始化與循環
         window.onload = () => {
-            fetchTaipowerAPI();
-            updateLiveValues();
-            
-            // 每 3 秒更新一次收益與頻率 (產生跳動感)
-            setInterval(updateLiveValues, 3000);
-            
-            // 每 60 秒抓一次真實台電數據
-            setInterval(fetchTaipowerAPI, 60000);
+            fetchTaipower();
+            setInterval(calculateProfit, 2000); // 收益每2秒跳動
+            setInterval(fetchTaipower, 30000); // API每30秒抓一次
         };
     </script>
 </body>
