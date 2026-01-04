@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPP-ACCOUNTING PRO | 需量競價經濟型</title>
+    <title> 需量競價經濟型</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;500;900&display=swap');
-        :root { --primary: #00f2ff; --bg: #0d1117; --card-bg: rgba(22, 27, 34, 0.95); }
-        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
+        :root { --primary: #00f2ff; --bg: #0d1117; --card-bg: rgba(22, 27, 34, 0.95); --emerald: #3fb950; }
+        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; }
         .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; }
         .digital-num { font-family: 'Orbitron', sans-serif; font-variant-numeric: tabular-nums; }
-        .input-field { background: rgba(0, 0, 0, 0.3); border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.6rem; width: 100%; color: var(--primary); text-align: right; }
-        .label-text { font-size: 11px; color: #8b949e; font-weight: 700; margin-bottom: 4px; display: block; }
-        .highlight-box { background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 12px; padding: 15px; }
+        .input-field { background: #161b22; border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.8rem; width: 100%; color: var(--primary); text-align: right; font-size: 1.25rem; }
+        .label-text { font-size: 12px; color: #8b949e; font-weight: 700; margin-bottom: 8px; display: block; }
+        .btn-toggle { background: #161b22; border: 1px solid #30363d; padding: 10px 20px; border-radius: 8px; transition: all 0.3s; color: #8b949e; font-weight: bold; }
+        .btn-toggle.active { background: #1f6feb; border-color: #58a6ff; color: white; box-shadow: 0 0 15px rgba(31, 111, 235, 0.4); }
+        .status-box { background: rgba(22, 27, 34, 0.8); border: 1px solid #30363d; border-radius: 12px; padding: 16px; }
     </style>
 </head>
-<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-6xl space-y-6">
+<body class="p-6 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-5xl space-y-6">
         
         <header class="glass-card p-6 flex justify-between items-center border-l-4 border-cyan-500">
             <div>
                 <h1 class="text-2xl font-black digital-num text-white">VPP-ACCOUNTING <span class="text-cyan-400">PRO</span></h1>
-                <p class="text-[10px] text-slate-500 tracking-widest uppercase">Demand Response: Economic Mode (DR)</p>
+                <p class="text-[10px] text-slate-500 tracking-widest uppercase">經濟型需量競價 (ECONOMIC DR)</p>
             </div>
             <div class="text-right">
                 <p class="label-text">系統功率因素 (PF)</p>
@@ -33,135 +34,103 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <section class="lg:col-span-5 glass-card p-8 flex flex-col justify-between">
+            <section class="lg:col-span-5 glass-card p-8 flex flex-col justify-between shadow-2xl">
                 <div>
-                    <h3 class="label-text text-cyan-400 mb-4">本月流動電費扣減預估 (TWD)</h3>
-                    <div class="mb-6">
-                        <span id="monthly-val" class="text-5xl font-black digital-num text-emerald-400">$ 0.00</span>
+                    <h3 class="label-text text-cyan-400 mb-6">本月流動電費扣減預估 (TWD)</h3>
+                    <div class="mb-8">
+                        <span id="monthly-val" class="text-6xl font-black digital-num text-emerald-400">$ 0.00</span>
                     </div>
 
-                    <div class="space-y-4 pt-6 border-t border-white/10">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="highlight-box">
-                                <p class="label-text text-slate-400">當日執行率</p>
-                                <p id="exec-rate" class="text-2xl font-bold digital-num text-white">0%</p>
-                            </div>
-                            <div class="highlight-box">
-                                <p class="label-text text-slate-400">扣減比率</p>
-                                <p id="discount-rate" class="text-2xl font-bold digital-num text-orange-400">0%</p>
-                            </div>
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <div class="status-box">
+                            <p class="label-text">當日執行率</p>
+                            <p id="exec-rate" class="text-3xl font-bold digital-num text-white">0.0%</p>
                         </div>
+                        <div class="status-box">
+                            <p id="rate-label" class="label-text">扣減比率</p>
+                            <p id="discount-rate-ui" class="text-3xl font-bold digital-num text-orange-400">0%</p>
+                        </div>
+                    </div>
 
-                        <div class="space-y-2 mt-4">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-slate-400">實際抑低容量 (P)</span>
-                                <span id="detail-p" class="text-white digital-num">0 kW</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-slate-400">執行時數 (H)</span>
-                                <span id="detail-h" class="text-white digital-num">0 Hrs</span>
-                            </div>
-                            <div class="flex justify-between text-sm border-t border-white/5 pt-2">
-                                <span class="text-orange-400 font-bold">今日扣減總額</span>
-                                <span id="daily-val" class="text-orange-400 font-bold digital-num">$ 0.00</span>
-                            </div>
+                    <div class="space-y-3 pt-6 border-t border-white/10">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">實際抑低容量 (P)</span>
+                            <span id="detail-p" class="text-white digital-num font-bold">0 kW</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">執行時數 (H)</span>
+                            <span id="detail-h" class="text-white digital-num font-bold">0 Hrs</span>
+                        </div>
+                        <div class="flex justify-between pt-4 mt-4 border-t border-dashed border-white/20">
+                            <span class="text-orange-400 font-black text-lg">今日扣減總額</span>
+                            <span id="daily-val" class="text-orange-400 font-black text-2xl digital-num">$ 0.00</span>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section class="lg:col-span-7 glass-card p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="label-text text-cyan-500">通知時間設定</label>
-                        <select id="notice-type" onchange="calculate()" class="input-field bg-slate-800 text-left">
-                            <option value="1">前一日下午 6 時前 (基準報價)</option>
-                            <option value="1.2">抑低用電前 2 小時 (報價加 2 成)</option>
+            <section class="lg:col-span-7 glass-card p-8 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="col-span-full">
+                        <label class="label-text text-cyan-500">通知時間設定 (公式模式切換)</label>
+                        <select id="notice-type" onchange="calculate()" class="input-field text-left">
+                            <option value="day-ahead">前一日下午 6 時前 (依執行率階梯)</option>
+                            <option value="two-hour">抑低用電前 2 小時 (固定報價 120%)</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="label-text text-cyan-500">抑低用電每度報價 (元)</label>
-                        <input type="number" id="bid-price" value="10" step="0.1" oninput="calculate()" class="input-field">
+
+                    <div class="col-span-full">
+                        <label class="label-text text-white text-lg">當次抑低時數選擇 (Hr)</label>
+                        <div class="flex gap-4">
+                            <button onclick="setHours(2)" id="btn-2h" class="btn-toggle flex-1 text-xl py-4 active">2 小時</button>
+                            <button onclick="setHours(4)" id="btn-4h" class="btn-toggle flex-1 text-xl py-4">4 小時</button>
+                        </div>
                     </div>
+
                     <div>
                         <label class="label-text text-white">抑低契約容量 (kW)</label>
-                        <input type="number" id="target-kw" value="100" oninput="calculate()" class="input-field">
+                        <input type="number" id="target-kw" value="1000" oninput="calculate()" class="input-field">
                     </div>
                     <div>
                         <label class="label-text text-white">實際抑低容量 (kW)</label>
-                        <input type="number" id="actual-kw" value="80" oninput="calculate()" class="input-field font-bold text-emerald-400">
+                        <input type="number" id="actual-kw" value="900" oninput="calculate()" class="input-field font-bold text-emerald-400">
                     </div>
                     <div>
-                        <label class="label-text text-white">當次執行時數 (Hr)</label>
-                        <input type="number" id="exec-hours" value="4" oninput="calculate()" class="input-field">
+                        <label class="label-text text-white">每度報價 (元/kWh)</label>
+                        <input type="number" id="bid-price" value="10" step="0.1" oninput="calculate()" class="input-field">
                     </div>
                     <div>
-                        <label class="label-text text-white">月執行次數模擬</label>
+                        <label class="label-text text-white">本月模擬執行次數</label>
                         <input type="number" id="monthly-count" value="10" oninput="calculate()" class="input-field">
                     </div>
                 </div>
 
-                <div class="mt-8 p-4 bg-slate-900/50 rounded-lg text-[11px] text-slate-500 font-mono">
-                    <p class="text-cyan-500 font-bold mb-1">台電結算公式：</p>
-                    流動電費扣減 = 實際抑低容量 × 執行時數 × (報價 × 通知加成) × 扣減比率 <br>
-                    ※ 執行率(x) = 實際 / 契約：x < 60% (0%) | 60% ≤ x < 80% (100%) | 80% ≤ x ≤ 120% (110%) | x > 120% (100%)
+                <div class="mt-4 p-4 bg-black/50 rounded-lg text-xs font-mono border border-white/5">
+                    <p class="text-cyan-500 font-bold mb-2">● 系統結算邏輯 (依據台電 2026 最新規章)：</p>
+                    <div id="formula-desc" class="text-slate-500 space-y-1">
+                        </div>
                 </div>
             </section>
         </div>
     </div>
 
     <script>
+        let selectedHours = 2;
+
+        function setHours(h) {
+            selectedHours = h;
+            document.getElementById('btn-2h').classList.toggle('active', h === 2);
+            document.getElementById('btn-4h').classList.toggle('active', h === 4);
+            calculate();
+        }
+
         function calculate() {
-            // 1. 取得輸入值
-            const noticeWeight = parseFloat(document.getElementById('notice-type').value);
-            const bidPrice = parseFloat(document.getElementById('bid-price').value);
+            const noticeMode = document.getElementById('notice-type').value;
+            const bidPrice = parseFloat(document.getElementById('bid-price').value) || 0;
             const targetKW = parseFloat(document.getElementById('target-kw').value) || 0;
             const actualKW = parseFloat(document.getElementById('actual-kw').value) || 0;
-            const hours = parseFloat(document.getElementById('exec-hours').value) || 0;
             const mCount = parseFloat(document.getElementById('monthly-count').value) || 0;
 
-            // 2. 執行率演算 (Execution Rate)
             let execRate = targetKW > 0 ? (actualKW / targetKW) * 100 : 0;
-            
-            // 3. 判定扣減比率 (根據附圖階梯表)
             let discountRate = 0;
-            if (actualKW < 20) { // 附圖規定：低於20瓩不予計入
-                discountRate = 0;
-            } else {
-                if (execRate < 60) {
-                    discountRate = 0;
-                } else if (execRate >= 60 && execRate < 80) {
-                    discountRate = 1.0; // 100%
-                } else if (execRate >= 80 && execRate <= 120) {
-                    discountRate = 1.1; // 110%
-                } else {
-                    discountRate = 1.0; // >120% 回歸 100%
-                }
-            }
-
-            // 4. 計算單次收益 (流動電費扣減)
-            // 公式：P * H * (Price * Weight) * Discount
-            const adjustedPrice = bidPrice * noticeWeight;
-            const dailyTotal = actualKW * hours * adjustedPrice * discountRate;
-            const monthlyTotal = dailyTotal * mCount;
-
-            // 5. 更新 UI
-            document.getElementById('exec-rate').innerText = execRate.toFixed(1) + "%";
-            document.getElementById('discount-rate').innerText = (discountRate * 100).toFixed(0) + "%";
-            document.getElementById('detail-p').innerText = actualKW + " kW";
-            document.getElementById('detail-h').innerText = hours + " Hrs";
-            
-            animateValue("daily-val", dailyTotal);
-            animateValue("monthly-val", monthlyTotal);
-        }
-
-        function animateValue(id, value) {
-            const el = document.getElementById(id);
-            el.innerText = "$ " + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        // 初始化
-        window.onload = calculate;
-    </script>
-</body>
-</html>
+            let dailyTotal =
