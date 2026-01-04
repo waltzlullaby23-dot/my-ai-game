@@ -3,36 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL VPP | 專業結算系統</title>
+    <title>SENTINEL VPP | 36H限額結算系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;500;900&display=swap');
         :root { --primary: #00f2ff; --bg: #0d1117; --card-bg: rgba(22, 27, 34, 0.95); }
-        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; }
-        .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; }
+        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
+        .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; position: relative; }
         .digital-num { font-family: 'Orbitron', sans-serif; font-variant-numeric: tabular-nums; }
         
-        /* 核心修正：動態字體與輸入框確保可點擊 */
+        /* 解決爆框的核心 CSS */
         .revenue-display {
-            font-size: min(3.5rem, 8vw);
-            line-height: 1;
+            font-size: clamp(1.8rem, 8vw, 3.5rem);
+            line-height: 1.2;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             display: block;
             width: 100%;
         }
-        .input-field { 
-            background: #161b22 !important; 
-            border: 1px solid #30363d; 
-            border-radius: 0.5rem; 
-            padding: 0.8rem; 
-            width: 100%; 
-            color: var(--primary); 
-            text-align: right; 
-            font-size: 1.25rem;
-            cursor: text;
-            position: relative;
-            z-index: 10; /* 確保輸入框在最上層 */
-        }
+
+        .input-field { background: #161b22 !important; border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.8rem; width: 100%; color: var(--primary); text-align: right; font-size: 1.25rem; z-index: 10; position: relative; }
+        .label-text { font-size: 11px; color: #8b949e; font-weight: 700; margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 1px; }
         .btn-toggle { background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 12px; transition: all 0.3s; color: #8b949e; font-weight: 900; }
         .btn-toggle.active { background: #1f6feb; border-color: #58a6ff; color: white; box-shadow: 0 0 20px rgba(31, 111, 235, 0.3); }
         .warning-tag { background: #f85149; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; animation: flash 1s infinite; }
@@ -49,40 +41,50 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-black digital-num text-white tracking-tighter">SENTINEL-PRO <span class="text-cyan-400">VPP</span></h1>
+                    <p id="systime" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest">REALTIME_LOG: 36H_LIMIT_ENFORCED</p>
                 </div>
             </div>
             
-            <div class="text-right">
-                <p class="text-[10px] text-slate-500 uppercase font-black">台電即時備轉</p>
-                <span id="reserve-val" class="text-3xl font-black digital-num text-white">14.5%</span>
+            <div class="flex gap-12 text-right">
+                <div>
+                    <p class="label-text">台電即時備轉容量率</p>
+                    <div class="flex items-center justify-end gap-3">
+                        <span id="reserve-val" class="text-4xl font-black digital-num text-white">--%</span>
+                        <div id="sync-status" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold">SYNC</div>
+                    </div>
+                </div>
+                <div class="border-l border-white/10 pl-12">
+                    <p class="label-text">系統狀態</p>
+                    <span class="text-2xl font-black text-cyan-400 digital-num uppercase">Active</span>
+                </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <section class="lg:col-span-5 glass-card p-8 flex flex-col justify-between shadow-2xl">
+            <section id="revenue-card" class="lg:col-span-5 glass-card p-8 flex flex-col justify-between shadow-2xl overflow-hidden">
                 <div>
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xs text-cyan-400 font-black tracking-widest uppercase">本月流動電費扣減 (TWD)</h3>
-                        <div id="hour-limit-tag" class="hidden warning-tag">36H LIMIT</div>
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="label-text text-cyan-400 font-black">本月流動電費扣減 (TWD)</h3>
+                        <div id="limit-badge" class="hidden warning-tag">36H MAX REACHED</div>
                     </div>
                     
-                    <div class="mb-10 min-h-[80px] flex items-center">
+                    <div class="mb-10 h-24 flex items-center">
                         <span id="monthly-val" class="revenue-display font-black digital-num text-emerald-400">$ 0.00</span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="grid grid-cols-2 gap-4 mb-10">
                         <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                            <p class="text-[10px] text-slate-500 font-black mb-2 uppercase">累計時數</p>
-                            <p id="total-hours-ui" class="text-2xl font-bold digital-num text-white">0 Hr</p>
+                            <p class="label-text">累計總時數</p>
+                            <p id="total-hours-ui" class="text-3xl font-bold digital-num text-white">0 <small class="text-xs">Hr</small></p>
                         </div>
                         <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                            <p class="text-[10px] text-slate-500 font-black mb-2 uppercase">收益加成</p>
-                            <p id="discount-rate-ui" class="text-2xl font-bold digital-num text-orange-400">--</p>
+                            <p id="rate-label" class="label-text">收益比率</p>
+                            <p id="discount-rate-ui" class="text-3xl font-bold digital-num text-orange-400">--</p>
                         </div>
                     </div>
 
                     <div class="pt-6 border-t border-white/10 flex justify-between items-end">
-                        <span class="text-xs text-slate-500 font-bold uppercase">今日當次扣減金額</span>
+                        <span class="text-xs text-slate-500 font-bold uppercase">單次抑低收益</span>
                         <span id="daily-val" class="text-orange-400 font-black text-2xl digital-num">$ 0.00</span>
                     </div>
                 </div>
@@ -91,14 +93,25 @@
             <section class="lg:col-span-7 glass-card p-8 space-y-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="col-span-full">
-                        <label class="text-[10px] text-cyan-500 font-black uppercase mb-2 block">調度通知設定</label>
+                        <label class="label-text text-cyan-500">調度通知時間類型</label>
                         <select id="notice-type" onchange="calculate()" class="input-field text-left font-bold">
-                            <option value="two-hour">抑低用電前 2 小時通知 (報價固定 × 120%)</option>
-                            <option value="day-ahead">前一日下午 6 時前 (依執行率階梯)</option>
+                            <option value="two-hour">抑低用電前 2 小時通知 (固定 120%)</option>
+                            <option value="day-ahead">前一日下午 6 時前通知 (依執行率階梯)</option>
                         </select>
                     </div>
 
                     <div class="col-span-full">
-                        <label class="text-[10px] text-white font-black uppercase mb-2 block">當次抑低時數選擇 (Hr)</label>
+                        <label class="label-text text-white">抑低時數選擇 (Hr)</label>
                         <div class="flex gap-4">
-                            <button onclick="setHours(2)" id
+                            <button onclick="setHours(2)" id="btn-2h" class="btn-toggle flex-1 text-xl active">2 小時</button>
+                            <button onclick="setHours(4)" id="btn-4h" class="btn-toggle flex-1 text-xl">4 小時</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="label-text">抑低契約容量 (kW)</label>
+                        <input type="number" id="target-kw" value="1000" oninput="calculate()" class="input-field">
+                    </div>
+                    <div>
+                        <label class="label-text text-emerald-500 font-bold">實際抑低容量 (kW)</label>
+                        <input type="number" id="actual-kw" value="900" oninput="calculate
