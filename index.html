@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL VPP | 需量競價結算系統</title>
+    <title>SENTINEL VPP | 36H限額結算系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;500;900&display=swap');
         :root { --primary: #00f2ff; --bg: #0d1117; --card-bg: rgba(22, 27, 34, 0.95); }
         body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; }
-        .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; }
+        .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; transition: all 0.3s; }
         .digital-num { font-family: 'Orbitron', sans-serif; font-variant-numeric: tabular-nums; }
         .input-field { background: #161b22; border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.8rem; width: 100%; color: var(--primary); text-align: right; font-size: 1.25rem; }
         .label-text { font-size: 11px; color: #8b949e; font-weight: 700; margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 1px; }
         .btn-toggle { background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 12px; transition: all 0.3s; color: #8b949e; font-weight: 900; }
         .btn-toggle.active { background: #1f6feb; border-color: #58a6ff; color: white; box-shadow: 0 0 20px rgba(31, 111, 235, 0.3); }
-        .status-pill { background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid #238636; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; }
-        .warning-text { color: #f85149 !important; font-weight: 900; }
+        .warning-border { border-color: #f85149 !important; box-shadow: 0 0 20px rgba(248, 81, 73, 0.2); }
     </style>
 </head>
 <body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
@@ -29,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-black digital-num text-white tracking-tighter">SENTINEL-PRO <span class="text-cyan-400">VPP</span></h1>
-                    <p id="systime" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest">REALTIME_LOG: CONNECTED</p>
+                    <p id="systime" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest">REALTIME_LOG: 36H_LIMIT_ACTIVE</p>
                 </div>
             </div>
             
@@ -37,26 +36,177 @@
                 <div>
                     <p class="label-text">台電即時備轉容量率</p>
                     <div class="flex items-center justify-end gap-3">
-                        <span id="reserve-val" class="text-4xl font-black digital-num text-white">--%</span>
-                        <div id="sync-status" class="status-pill">SYNCING</div>
+                        <span id="reserve-val" class="text-4xl font-black digital-num text-white">14.5%</span>
+                        <div class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold">LIVE</div>
                     </div>
                 </div>
                 <div class="border-l border-white/10 pl-12">
-                    <p class="label-text">系統狀態</p>
-                    <span class="text-2xl font-black text-cyan-400 digital-num uppercase tracking-widest">Active</span>
+                    <p class="label-text">系統功率因素 (PF)</p>
+                    <span class="text-4xl font-black text-cyan-400 digital-num">0.98</span>
                 </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <section class="lg:col-span-5 glass-card p-8 flex flex-col justify-between shadow-2xl">
+            <section id="revenue-card" class="lg:col-span-5 glass-card p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden">
                 <div>
-                    <h3 class="label-text text-cyan-400 mb-6 font-black">本月流動電費扣減預估 (TWD)</h3>
-                    <div class="mb-10">
-                        <span id="monthly-val" class="text-5xl font-black digital-num text-emerald-400 tracking-tight">$ 0.00</span>
+                    <h3 class="label-text text-cyan-400 mb-6 font-black tracking-widest">本月流動電費扣減 (TWD)</h3>
+                    <div class="mb-6">
+                        <span id="monthly-val" class="text-6xl font-black digital-num text-emerald-400 tracking-tight">$ 0.00</span>
+                    </div>
+
+                    <div id="hour-warning" class="hidden mb-6 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
+                        <p class="text-red-400 text-[10px] font-black uppercase tracking-tighter">⚠️ 已觸發強制限制：每月抑低時數上限 36 小時</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-10">
                         <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                            <p class="label-text">本月累計時數</p>
-                            <p id="total-hours" class="text-3xl font-bold digital-num text-white">0 / 36 <span class="text-xs">Hr</span></p>
+                            <p class="label-text">累計執行時數</p>
+                            <p id="total-hours-ui" class="text-3xl font-bold digital-num text-white">0 <small class="text-xs">Hr</small></p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <p class="label-text">收益加成比率</p>
+                            <p id="discount-rate-ui" class="text-3xl font-bold digital-num text-orange-400">1.00x</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-white/10">
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-slate-500 font-bold uppercase">單次抑低金額</span>
+                            <span id="daily-val" class="text-orange-400 font-black text-3xl digital-num">$ 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="lg:col-span-7 glass-card p-8 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="col-span-full">
+                        <label class="label-text text-cyan-500">調度通知類型 (決定結算公式)</label>
+                        <select id="notice-type" onchange="calculate()" class="input-field text-left font-bold">
+                            <option value="two-hour">抑低用電前 2 小時通知 (固定 120%)</option>
+                            <option value="day-ahead">前一日下午 6 時前通知 (依執行率階梯)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-full">
+                        <label class="label-text text-white">抑低時數選擇 (Hr/次) - 規章規定 2H 或 4H</label>
+                        <div class="flex gap-4">
+                            <button onclick="setHours(2)" id="btn-2h" class="btn-toggle flex-1 text-xl active">2 小時</button>
+                            <button onclick="setHours(4)" id="btn-4h" class="btn-toggle flex-1 text-xl">4 小時</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="label-text text-slate-400">抑低契約容量 (kW)</label>
+                        <input type="number" id="target-kw" value="1000" oninput="calculate()" class="input-field">
+                    </div>
+                    <div>
+                        <label class="label-text text-emerald-500 font-bold">實際抑低容量 (kW)</label>
+                        <input type="number" id="actual-kw" value="900" oninput="calculate()" class="input-field font-black text-emerald-400">
+                    </div>
+                    <div>
+                        <label class="label-text text-slate-400">抑低用電每度報價 (元)</label>
+                        <input type="number" id="bid-price" value="10" step="0.5" oninput="calculate()" class="input-field">
+                    </div>
+                    <div>
+                        <label class="label-text text-slate-400">本月模擬執行次數</label>
+                        <input type="number" id="monthly-count" value="10" oninput="calculate()" class="input-field">
+                    </div>
+                </div>
+
+                <div class="p-5 bg-black/40 rounded-xl border border-white/5">
+                    <p class="text-[10px] text-cyan-500 font-black mb-2 uppercase tracking-widest">Audit Trail / 規章合規檢查</p>
+                    <div id="formula-desc" class="text-xs text-slate-500 font-mono leading-relaxed">
+                        </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        let selectedHours = 2;
+
+        function setHours(h) {
+            selectedHours = h;
+            document.getElementById('btn-2h').classList.toggle('active', h === 2);
+            document.getElementById('btn-4h').classList.toggle('active', h === 4);
+            calculate();
+        }
+
+        function calculate() {
+            const noticeMode = document.getElementById('notice-type').value;
+            const bidPrice = parseFloat(document.getElementById('bid-price').value) || 0;
+            const targetKW = parseFloat(document.getElementById('target-kw').value) || 0;
+            const actualKW = parseFloat(document.getElementById('actual-kw').value) || 0;
+            const mCount = parseFloat(document.getElementById('monthly-count').value) || 0;
+
+            // 1. 總時數限制邏輯 (36小時上限)
+            let totalHoursRaw = selectedHours * mCount;
+            let finalHoursForBilling = totalHoursRaw;
+            let isOverLimit = false;
+
+            if (totalHoursRaw > 36) {
+                finalHoursForBilling = 36;
+                isOverLimit = true;
+            }
+
+            // 2. 執行率計算
+            let execRate = targetKW > 0 ? (actualKW / targetKW) * 100 : 0;
+            let ratio = 0;
+            let dailyTotal = 0;
+            let trace = "";
+
+            // 3. 20kW 除外與公式判定
+            if (actualKW < 20) {
+                ratio = 0; dailyTotal = 0;
+                trace = "🚨 實際抑低未達 20kW，該次不計入扣減金額。";
+            } else if (noticeMode === "two-hour") {
+                ratio = 1.2;
+                dailyTotal = actualKW * selectedHours * bidPrice * ratio;
+                document.getElementById('discount-rate-ui').innerText = "1.20x";
+                trace = `模式：前2小時通知 | 固定加成 120% | 單次：$${dailyTotal.toLocaleString()}`;
+            } else {
+                if (execRate < 60) ratio = 0;
+                else if (execRate < 80) ratio = 1.0;
+                else if (execRate <= 120) ratio = 1.1;
+                else ratio = 1.0;
+                
+                dailyTotal = actualKW * selectedHours * bidPrice * ratio;
+                document.getElementById('discount-rate-ui').innerText = (ratio * 100) + "%";
+                trace = `模式：前一日通知 | 執行率 ${execRate.toFixed(1)}% -> 扣減比率 ${ratio*100}%`;
+            }
+
+            // 4. 月總計 (依據限額時數重算)
+            // 月收益 = 總限額時數 * 實際容量 * 報價 * 比率 / 選定時數 (簡化為按比例截斷)
+            const monthlyTotal = (dailyTotal / selectedHours) * finalHoursForBilling;
+
+            // 5. UI 更新與警示
+            document.getElementById('monthly-val').innerText = "$ " + monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            document.getElementById('daily-val').innerText = "$ " + dailyTotal.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            document.getElementById('exec-rate').innerText = execRate.toFixed(1) + "%";
+            document.getElementById('total-hours-ui').innerText = totalHoursRaw + " Hr";
+            
+            const warningBox = document.getElementById('hour-warning');
+            const revenueCard = document.getElementById('revenue-card');
+            if (isOverLimit) {
+                warningBox.classList.remove('hidden');
+                revenueCard.classList.add('warning-border');
+                document.getElementById('total-hours-ui').classList.add('text-red-500');
+            } else {
+                warningBox.classList.add('hidden');
+                revenueCard.classList.remove('warning-border');
+                document.getElementById('total-hours-ui').classList.remove('text-red-500');
+            }
+            document.getElementById('formula-desc').innerText = trace + ` | 月總時數：${totalHoursRaw}h (計費採計：${finalHoursForBilling}h)`;
+        }
+
+        window.onload = () => {
+            calculate();
+            setInterval(() => {
+                document.getElementById('systime').innerText = `REALTIME_LOG: ${new Date().toLocaleString()} [36H_ENFORCED]`;
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
