@@ -3,44 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL VPP | 36H限額結算系統</title>
+    <title>SENTINEL VPP | 需量競價結算系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;500;900&display=swap');
         :root { --primary: #00f2ff; --bg: #0d1117; --card-bg: rgba(22, 27, 34, 0.95); }
-        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
-        .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; position: relative; }
+        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; }
+        .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; }
         .digital-num { font-family: 'Orbitron', sans-serif; font-variant-numeric: tabular-nums; }
-        
-        /* 核心：解決數字爆框的動態縮放 */
-        .revenue-display {
-            font-size: clamp(1.8rem, 8vw, 3.5rem);
-            line-height: 1.2;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-            width: 100%;
-        }
-
-        .input-field { 
-            background: #161b22 !important; 
-            border: 1px solid #30363d; 
-            border-radius: 0.5rem; 
-            padding: 0.8rem; 
-            width: 100%; 
-            color: var(--primary); 
-            text-align: right; 
-            font-size: 1.25rem; 
-            position: relative;
-            z-index: 20; 
-            cursor: text;
-        }
+        .input-field { background: #161b22; border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.8rem; width: 100%; color: var(--primary); text-align: right; font-size: 1.25rem; }
         .label-text { font-size: 11px; color: #8b949e; font-weight: 700; margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 1px; }
         .btn-toggle { background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 12px; transition: all 0.3s; color: #8b949e; font-weight: 900; }
         .btn-toggle.active { background: #1f6feb; border-color: #58a6ff; color: white; box-shadow: 0 0 20px rgba(31, 111, 235, 0.3); }
-        .warning-tag { background: #f85149; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; animation: flash 1s infinite; }
-        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status-pill { background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid #238636; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; }
+        .warning-text { color: #f85149 !important; font-weight: 900; }
     </style>
 </head>
 <body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
@@ -53,7 +29,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-black digital-num text-white tracking-tighter">SENTINEL-PRO <span class="text-cyan-400">VPP</span></h1>
-                    <p id="systime" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest">REALTIME_LOG: 36H_ENFORCED</p>
+                    <p id="systime" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest">REALTIME_LOG: CONNECTED</p>
                 </div>
             </div>
             
@@ -62,12 +38,12 @@
                     <p class="label-text">台電即時備轉容量率</p>
                     <div class="flex items-center justify-end gap-3">
                         <span id="reserve-val" class="text-4xl font-black digital-num text-white">--%</span>
-                        <div id="sync-status" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Syncing</div>
+                        <div id="sync-status" class="status-pill">SYNCING</div>
                     </div>
                 </div>
                 <div class="border-l border-white/10 pl-12">
-                    <p class="label-text">系統功率因素 (PF)</p>
-                    <span class="text-4xl font-black text-cyan-400 digital-num">0.98</span>
+                    <p class="label-text">系統狀態</p>
+                    <span class="text-2xl font-black text-cyan-400 digital-num uppercase tracking-widest">Active</span>
                 </div>
             </div>
         </header>
@@ -75,4 +51,12 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <section class="lg:col-span-5 glass-card p-8 flex flex-col justify-between shadow-2xl">
                 <div>
-                    <div class="flex
+                    <h3 class="label-text text-cyan-400 mb-6 font-black">本月流動電費扣減預估 (TWD)</h3>
+                    <div class="mb-10">
+                        <span id="monthly-val" class="text-5xl font-black digital-num text-emerald-400 tracking-tight">$ 0.00</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-10">
+                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <p class="label-text">本月累計時數</p>
+                            <p id="total-hours" class="text-3xl font-bold digital-num text-white">0 / 36 <span class="text-xs">Hr</span></p>
