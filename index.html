@@ -3,344 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL-PRO VPP | 2026 企業級結算系統</title>
+    <title>VPP-ACCOUNTING PRO | 需量競價經濟型</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;500;900&display=swap');
-        
-        :root { 
-            --primary: #00f2ff; 
-            --emerald: #10b981;
-            --bg: #0d1117; 
-            --card-bg: rgba(22, 27, 34, 0.95);
-        }
-
-        body { 
-            background: var(--bg); 
-            color: #e6edf3; 
-            font-family: 'Noto Sans TC', sans-serif; 
-            overflow-x: hidden; 
-        }
-
-        .glass-card { 
-            background: var(--card-bg); 
-            border: 1px solid #30363d; 
-            border-radius: 1.5rem; 
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
-
-        .digital-num { 
-            font-family: 'Orbitron', sans-serif; 
-            font-variant-numeric: tabular-nums; 
-            display: inline-block; 
-        }
-        
-        /* 收益數字自適應大小 */
-        .income-container { 
-            width: 100%; 
-            overflow: hidden; 
-            white-space: nowrap; 
-        }
-        
-        #monthly-val { 
-            font-size: clamp(2rem, 5vw, 3.5rem); 
-            font-weight: 900; 
-            color: #3fb950; 
-            line-height: 1.1;
-        }
-
-        #daily-val {
-            font-size: clamp(1.2rem, 3vw, 2rem);
-            font-weight: 700;
-            color: #fbbf24;
-        }
-
-        .input-field { 
-            background: rgba(0, 0, 0, 0.3); 
-            border: 1px solid #30363d; 
-            border-radius: 0.5rem; 
-            padding: 0.8rem; 
-            width: 100%; 
-            font-family: 'Orbitron', sans-serif; 
-            color: var(--primary); 
-            font-size: 1.1rem;
-            outline: none; 
-            text-align: right;
-            transition: all 0.3s;
-        }
-        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 242, 255, 0.1); }
-
-        .status-pill { padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 900; letter-spacing: 1px; }
-        .status-green { background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid #238636; }
-        .status-yellow { background: rgba(187, 128, 9, 0.2); color: #d29922; border: 1px solid #9e6a03; }
-
-        .strategy-item { transition: all 0.3s; cursor: pointer; border: 1px solid #30363d; position: relative; overflow: hidden; }
-        .strategy-item:hover { border-color: #58a6ff; transform: translateY(-2px); }
-        .strategy-item.active { border-color: var(--primary); background: rgba(0, 242, 255, 0.08); }
-        .strategy-item.active::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); }
-
-        .label-text { font-size: 10px; color: #8b949e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
+        :root { --primary: #00f2ff; --bg: #0d1117; --card-bg: rgba(22, 27, 34, 0.95); }
+        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
+        .glass-card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 1.5rem; }
+        .digital-num { font-family: 'Orbitron', sans-serif; font-variant-numeric: tabular-nums; }
+        .input-field { background: rgba(0, 0, 0, 0.3); border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.6rem; width: 100%; color: var(--primary); text-align: right; }
+        .label-text { font-size: 11px; color: #8b949e; font-weight: 700; margin-bottom: 4px; display: block; }
+        .highlight-box { background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 12px; padding: 15px; }
     </style>
 </head>
 <body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-7xl space-y-6">
+    <div class="w-full max-w-6xl space-y-6">
         
-        <header class="glass-card p-6 flex flex-col md:flex-row justify-between items-center gap-6 border-l-4 border-emerald-500 relative overflow-hidden">
-            <div class="flex items-center gap-5 z-10">
-                <div class="w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-teal-900/40 rounded-2xl flex items-center justify-center text-emerald-400 font-black text-2xl border border-emerald-500/30">V</div>
-                <div>
-                    <h1 class="text-2xl font-black digital-num text-white">VPP-ACCOUNTING <span class="text-emerald-400 font-light">PRO</span></h1>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                        <p id="systime" class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">SYSTEM READY</p>
-                    </div>
-                </div>
+        <header class="glass-card p-6 flex justify-between items-center border-l-4 border-cyan-500">
+            <div>
+                <h1 class="text-2xl font-black digital-num text-white">VPP-ACCOUNTING <span class="text-cyan-400">PRO</span></h1>
+                <p class="text-[10px] text-slate-500 tracking-widest uppercase">Demand Response: Economic Mode (DR)</p>
             </div>
-            
-            <div class="flex gap-10 z-10">
-                <div class="text-right">
-                    <p class="label-text">今日備轉容量率</p>
-                    <div class="flex items-center justify-end gap-3">
-                        <span id="reserve-val" class="text-3xl font-black digital-num text-white">12.5%</span>
-                        <div id="status-light" class="status-pill status-green">SYNC</div>
-                    </div>
-                </div>
-                <div class="text-right border-l border-white/10 pl-10">
-                    <p class="label-text">系統功率因素 (電費折扣指標)</p>
-                    <span class="text-3xl font-black text-cyan-400 digital-num">0.98 <small class="text-xs text-slate-500">PF</small></span>
-                </div>
+            <div class="text-right">
+                <p class="label-text">系統功率因素 (PF)</p>
+                <span class="text-2xl font-black text-white digital-num">0.98</span>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <section class="lg:col-span-5 glass-card p-8 flex flex-col justify-between min-h-[480px]">
+            <section class="lg:col-span-5 glass-card p-8 flex flex-col justify-between">
                 <div>
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="label-text text-emerald-500">本月累計總收益預估 (TWD)</h3>
-                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded font-bold">22 工作日模型</span>
+                    <h3 class="label-text text-cyan-400 mb-4">本月流動電費扣減預估 (TWD)</h3>
+                    <div class="mb-6">
+                        <span id="monthly-val" class="text-5xl font-black digital-num text-emerald-400">$ 0.00</span>
                     </div>
-                    
-                    <div class="income-container mb-2">
-                        <span id="monthly-val" class="digital-num">$ 0.00</span>
-                    </div>
-                    <p class="text-xs text-slate-500 font-medium mb-8">※ 已包含功率因素折扣與容量費收益</p>
 
-                    <div class="space-y-3 pt-6 border-t border-white/10">
-                        <h4 class="label-text text-white mb-3">收益組成明細</h4>
-                        <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                            <span class="text-xs text-slate-400">容量費 (待命站台)</span>
-                            <span id="detail-cap" class="text-white font-bold digital-num">$ 0.00</span>
+                    <div class="space-y-4 pt-6 border-t border-white/10">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="highlight-box">
+                                <p class="label-text text-slate-400">當日執行率</p>
+                                <p id="exec-rate" class="text-2xl font-bold digital-num text-white">0%</p>
+                            </div>
+                            <div class="highlight-box">
+                                <p class="label-text text-slate-400">扣減比率</p>
+                                <p id="discount-rate" class="text-2xl font-bold digital-num text-orange-400">0%</p>
+                            </div>
                         </div>
-                        <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                            <span class="text-xs text-slate-400">能量費 (實際抑低)</span>
-                            <span id="detail-eng" class="text-emerald-400 font-bold digital-num">$ 0.00</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                            <span class="text-xs text-slate-400">契約容量基本回饋</span>
-                            <span id="detail-con" class="text-blue-400 font-bold digital-num">$ 0.00</span>
-                        </div>
-                        <div class="flex justify-between items-end mt-4 pt-4 border-t border-dashed border-white/20">
-                            <span class="text-sm font-bold text-orange-400">今日預計總計</span>
-                            <span id="daily-val" class="digital-num">$ 0.00</span>
+
+                        <div class="space-y-2 mt-4">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-400">實際抑低容量 (P)</span>
+                                <span id="detail-p" class="text-white digital-num">0 kW</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-400">執行時數 (H)</span>
+                                <span id="detail-h" class="text-white digital-num">0 Hrs</span>
+                            </div>
+                            <div class="flex justify-between text-sm border-t border-white/5 pt-2">
+                                <span class="text-orange-400 font-bold">今日扣減總額</span>
+                                <span id="daily-val" class="text-orange-400 font-bold digital-num">$ 0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section class="lg:col-span-7 glass-card p-8 min-h-[480px] flex flex-col">
-                <div class="flex justify-between items-start mb-6">
-                    <h3 class="label-text text-cyan-500">全月收益趨勢模擬</h3>
-                    <div class="flex gap-2">
-                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                        <span class="text-[10px] text-slate-400">預測值</span>
+            <section class="lg:col-span-7 glass-card p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="label-text text-cyan-500">通知時間設定</label>
+                        <select id="notice-type" onchange="calculate()" class="input-field bg-slate-800 text-left">
+                            <option value="1">前一日下午 6 時前 (基準報價)</option>
+                            <option value="1.2">抑低用電前 2 小時 (報價加 2 成)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-text text-cyan-500">抑低用電每度報價 (元)</label>
+                        <input type="number" id="bid-price" value="10" step="0.1" oninput="calculate()" class="input-field">
+                    </div>
+                    <div>
+                        <label class="label-text text-white">抑低契約容量 (kW)</label>
+                        <input type="number" id="target-kw" value="100" oninput="calculate()" class="input-field">
+                    </div>
+                    <div>
+                        <label class="label-text text-white">實際抑低容量 (kW)</label>
+                        <input type="number" id="actual-kw" value="80" oninput="calculate()" class="input-field font-bold text-emerald-400">
+                    </div>
+                    <div>
+                        <label class="label-text text-white">當次執行時數 (Hr)</label>
+                        <input type="number" id="exec-hours" value="4" oninput="calculate()" class="input-field">
+                    </div>
+                    <div>
+                        <label class="label-text text-white">月執行次數模擬</label>
+                        <input type="number" id="monthly-count" value="10" oninput="calculate()" class="input-field">
                     </div>
                 </div>
-                <div class="flex-grow relative w-full h-full">
-                    <canvas id="mainChart"></canvas>
-                </div>
-            </section>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div id="strategy-grid" class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="mt-8 p-4 bg-slate-900/50 rounded-lg text-[11px] text-slate-500 font-mono">
+                    <p class="text-cyan-500 font-bold mb-1">台電結算公式：</p>
+                    流動電費扣減 = 實際抑低容量 × 執行時數 × (報價 × 通知加成) × 扣減比率 <br>
+                    ※ 執行率(x) = 實際 / 契約：x < 60% (0%) | 60% ≤ x < 80% (100%) | 80% ≤ x ≤ 120% (110%) | x > 120% (100%)
                 </div>
-            
-            <section class="lg:col-span-4 glass-card p-6 flex flex-col justify-between">
-                <div class="space-y-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="w-1 h-4 bg-cyan-500 rounded-full"></span>
-                        <h4 class="text-sm font-bold text-white">參數設定</h4>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="label-text">契約容量 (kW)</label>
-                            <input type="number" id="contract-kw" value="1000" oninput="calculate()" class="input-field">
-                        </div>
-                        <div>
-                            <label class="label-text">預計抑低 (kW)</label>
-                            <input type="number" id="reduce-kw" value="200" oninput="calculate()" class="input-field text-emerald-400 font-bold">
-                        </div>
-                    </div>
-                </div>
-                
-                <button onclick="fetchTaipower()" class="mt-6 w-full bg-white text-black py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-lg active:scale-95">
-                    更新台電數據
-                </button>
             </section>
         </div>
     </div>
 
     <script>
-        const plans = [
-            { name: "區域 A 空調卸載", kw: 50, profit: 4200, active: false },
-            { name: "BESS 儲能系統放電", kw: 150, profit: 12800, active: true },
-            { name: "非產線照明減光", kw: 20, profit: 1600, active: false }
-        ];
-
-        let chartInstance;
-
-        function initChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.5)');
-            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
-
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    datasets: [{
-                        label: '預估月收益',
-                        data: [0, 0, 0, 0],
-                        backgroundColor: gradient,
-                        borderColor: '#10b981',
-                        borderWidth: 2,
-                        borderRadius: 6,
-                        barThickness: 40
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#6b7280' } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
-                    }
-                }
-            });
-        }
-
-        // 修正：更穩健的抓取邏輯
-        async function fetchTaipower() {
-            const btn = document.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = "同步中...";
-            
-            // 設定一個模擬值，以防 API 失敗
-            let rate = 12.5 + (Math.random() * 2); 
-            
-            try {
-                // 設定 2秒 超時，如果台電太慢就直接用模擬值，避免畫面卡住
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-                
-                const res = await fetch("https://corsproxy.io/?https://www.taipower.com.tw/d006/load_draw/data/load_supply_info.json", { signal: controller.signal });
-                const data = await res.json();
-                rate = parseFloat(data.reserve_rate);
-                
-                document.getElementById('status-light').innerText = "LIVE DATA";
-                document.getElementById('status-light').className = "status-pill status-green";
-                
-            } catch (e) {
-                console.warn("API Slow/Fail, using simulation");
-                document.getElementById('status-light').innerText = "SIMULATED";
-                document.getElementById('status-light').className = "status-pill status-yellow";
-            } finally {
-                updateReserveUI(rate);
-                setTimeout(() => { btn.innerText = originalText; }, 500);
-            }
-        }
-
-        function updateReserveUI(rate) {
-            const valEl = document.getElementById('reserve-val');
-            animateValue(valEl, parseFloat(valEl.innerText)||0, rate, "%");
-            calculate();
-        }
-
         function calculate() {
-            const contractKW = parseFloat(document.getElementById('contract-kw').value) || 0;
-            const reduceKW = parseFloat(document.getElementById('reduce-kw').value) || 0;
-            const strategyBonus = plans.filter(p => p.active).reduce((sum, p) => sum + p.profit, 0);
+            // 1. 取得輸入值
+            const noticeWeight = parseFloat(document.getElementById('notice-type').value);
+            const bidPrice = parseFloat(document.getElementById('bid-price').value);
+            const targetKW = parseFloat(document.getElementById('target-kw').value) || 0;
+            const actualKW = parseFloat(document.getElementById('actual-kw').value) || 0;
+            const hours = parseFloat(document.getElementById('exec-hours').value) || 0;
+            const mCount = parseFloat(document.getElementById('monthly-count').value) || 0;
 
-            // 財務計算 (加入 PF 0.98 的隱含效益)
-            const capFee = (reduceKW * 0.45 * 24); 
-            const engFee = (reduceKW * 8.5 * 6 * 1.05); 
-            const conBonus = (contractKW * 0.25 * 6); 
-
-            const dailyTotal = capFee + engFee + conBonus + strategyBonus;
-            const monthlyTotal = dailyTotal * 22;
-
-            updateCurrency("daily-val", dailyTotal);
-            updateCurrency("monthly-val", monthlyTotal);
-            updateCurrency("detail-cap", capFee);
-            updateCurrency("detail-eng", engFee);
-            updateCurrency("detail-con", conBonus);
-
-            if(chartInstance) {
-                chartInstance.data.datasets[0].data = [
-                    monthlyTotal * 0.22, 
-                    monthlyTotal * 0.26, 
-                    monthlyTotal * 0.24, 
-                    monthlyTotal * 0.28
-                ];
-                chartInstance.update();
+            // 2. 執行率演算 (Execution Rate)
+            let execRate = targetKW > 0 ? (actualKW / targetKW) * 100 : 0;
+            
+            // 3. 判定扣減比率 (根據附圖階梯表)
+            let discountRate = 0;
+            if (actualKW < 20) { // 附圖規定：低於20瓩不予計入
+                discountRate = 0;
+            } else {
+                if (execRate < 60) {
+                    discountRate = 0;
+                } else if (execRate >= 60 && execRate < 80) {
+                    discountRate = 1.0; // 100%
+                } else if (execRate >= 80 && execRate <= 120) {
+                    discountRate = 1.1; // 110%
+                } else {
+                    discountRate = 1.0; // >120% 回歸 100%
+                }
             }
+
+            // 4. 計算單次收益 (流動電費扣減)
+            // 公式：P * H * (Price * Weight) * Discount
+            const adjustedPrice = bidPrice * noticeWeight;
+            const dailyTotal = actualKW * hours * adjustedPrice * discountRate;
+            const monthlyTotal = dailyTotal * mCount;
+
+            // 5. 更新 UI
+            document.getElementById('exec-rate').innerText = execRate.toFixed(1) + "%";
+            document.getElementById('discount-rate').innerText = (discountRate * 100).toFixed(0) + "%";
+            document.getElementById('detail-p').innerText = actualKW + " kW";
+            document.getElementById('detail-h').innerText = hours + " Hrs";
+            
+            animateValue("daily-val", dailyTotal);
+            animateValue("monthly-val", monthlyTotal);
         }
 
-        function renderPlans() {
-            document.getElementById('strategy-grid').innerHTML = plans.map((p, idx) => `
-                <div onclick="togglePlan(${idx})" class="strategy-item glass-card p-5 flex flex-col justify-between h-32 ${p.active ? 'active' : ''}">
-                    <div class="flex justify-between items-start">
-                        <h4 class="font-bold text-xs text-slate-300 uppercase tracking-wider">${p.name}</h4>
-                        ${p.active ? '<span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_10px_#00f2ff]"></span>' : ''}
-                    </div>
-                    <div class="flex justify-between items-end border-t border-white/5 pt-3">
-                        <div>
-                            <p class="text-[10px] text-slate-500 font-bold mb-1">PROFIT</p>
-                            <p class="text-lg font-black text-orange-400 digital-num">+$${p.profit.toLocaleString()}</p>
-                        </div>
-                        <p class="text-[9px] text-emerald-500 font-bold uppercase bg-emerald-500/10 px-2 py-1 rounded">-${p.kw}kW</p>
-                    </div>
-                </div>
-            `).join('');
+        function animateValue(id, value) {
+            const el = document.getElementById(id);
+            el.innerText = "$ " + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        function togglePlan(idx) {
-            plans[idx].active = !plans[idx].active;
-            renderPlans();
-            calculate();
-        }
-
-        function updateCurrency(id, value) {
-            animateValue(document.getElementById(id), 0, value, "$ ");
-        }
-
-        function animateValue(obj, start, end, prefix = "") {
-            obj.innerText = prefix + end.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        window.onload = () => {
-            initChart();
-            renderPlans();
-            fetchTaipower(); 
-            setInterval(() => { 
-                const now = new Date();
-                document.getElementById('systime').innerText = `SYSTEM ACTIVE: ${now.toLocaleTimeString()}`; 
-            }, 1000);
-        };
+        // 初始化
+        window.onload = calculate;
     </script>
 </body>
 </html>
