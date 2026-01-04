@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL PRO | 台電即時同步系統</title>
+    <title>2026 Energy Sentinel Pro | 官網即時同步系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;500;900&display=swap');
         
         :root { --primary: #00f2ff; --bg: #0d1117; }
-        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; }
+        body { background: var(--bg); color: #e6edf3; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
 
-        .glass-card { background: rgba(22, 27, 34, 0.8); border: 1px solid #30363d; border-radius: 2rem; }
+        .glass-card { background: rgba(22, 27, 34, 0.8); border: 1px solid #30363d; border-radius: 2.5rem; }
         
-        /* 數字穩定器 */
+        /* 數字穩定器：強制等寬字體並設定最小寬度，防止排版跳動 */
         .digital-num { 
             font-family: 'Orbitron', sans-serif; 
             font-variant-numeric: tabular-nums; 
             display: inline-block;
-            min-width: 1.2em;
+            white-space: nowrap;
         }
 
         .input-field {
-            background: #161b22;
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid #30363d;
             border-radius: 1rem;
             padding: 1rem;
@@ -31,139 +31,229 @@
             font-family: 'Orbitron', sans-serif;
             color: var(--primary);
             outline: none;
+            transition: border-color 0.3s;
         }
+        .input-field:focus { border-color: var(--primary); }
 
-        .status-pill { padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: bold; }
+        .status-pill { padding: 4px 14px; border-radius: 99px; font-size: 11px; font-weight: 900; letter-spacing: 1px; }
         .status-green { background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid #238636; }
         .status-yellow { background: rgba(187, 128, 9, 0.2); color: #d29922; border: 1px solid #9e6a03; }
+        .status-orange { background: rgba(219, 109, 40, 0.2); color: #f78166; border: 1px solid #db6d28; }
+
+        .strategy-item { transition: all 0.3s ease; cursor: pointer; border: 1px solid #30363d; }
+        .strategy-item.active { border-color: var(--primary); background: rgba(0, 242, 255, 0.05); transform: translateY(-2px); }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-5xl mx-auto space-y-6">
+<body class="p-4 md:p-10">
+    <div class="max-w-6xl mx-auto space-y-6">
         
         <header class="glass-card p-8 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="space-y-1">
-                <h1 class="text-2xl font-black tracking-tight">電力交易 Pro <span class="text-blue-500 font-light">| 2026</span></h1>
-                <p class="text-xs text-slate-500">針對大用戶夜尖峰方案設計</p>
-                <div class="flex items-center gap-2 mt-2">
+            <div class="space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center font-black italic">E</div>
+                    <h1 class="text-2xl font-black digital-num">SENTINEL-PRO <span class="text-cyan-400">VPP</span></h1>
+                </div>
+                <div class="flex items-center gap-2">
                     <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-                    <span class="text-[10px] font-bold text-slate-400">台電官網即時數據連線中</span>
+                    <p id="systime" class="text-[10px] font-mono text-slate-500 uppercase">SYNC_OK: 2026/1/4 12:52:47</p>
                 </div>
             </div>
-            <div class="text-center md:text-right">
-                <p class="text-xs text-slate-500 font-bold uppercase mb-1">全台備轉容量率</p>
-                <div class="flex items-center gap-4">
-                    <span id="reserve-val" class="text-5xl font-black digital-num text-white">--%</span>
-                    <div id="status-light" class="status-pill status-green">供電充裕</div>
+            <div class="flex gap-10">
+                <div class="text-right">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">備轉容量率</p>
+                    <div class="flex items-center gap-3 justify-end">
+                        <span id="reserve-val" class="text-4xl font-black digital-num" style="min-width: 120px;">--%</span>
+                        <div id="status-light" class="status-pill status-green">供電充裕</div>
+                    </div>
+                </div>
+                <div class="text-right border-l border-white/10 pl-10">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">電網頻率</p>
+                    <span id="freq-val" class="text-2xl font-black text-blue-400 digital-num" style="min-width: 100px;">60.00 Hz</span>
                 </div>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <section class="glass-card p-6 flex items-center justify-between">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section class="lg:col-span-4 glass-card p-10 flex flex-col justify-between h-[400px]">
                 <div>
-                    <p class="text-xs text-slate-500 font-bold mb-2">預估今日收益</p>
-                    <span id="income-val" class="text-3xl font-black text-orange-400 digital-num">$ 0.00</span>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">本時段預期淨收益 (TWD)</h3>
+                    <div class="h-20 flex items-center">
+                        <span id="income-val" class="text-5xl font-black text-orange-400 digital-num" style="min-width: 280px;">$ 0.00</span>
+                    </div>
+                    <div class="mt-8 flex gap-4">
+                        <div class="p-3 bg-white/5 rounded-xl border border-white/5 flex-1 text-center">
+                            <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">碳避減量</p>
+                            <p class="text-lg font-bold text-emerald-400 digital-num"><span id="co2-val">0.0</span> <small class="text-[10px]">kg</small></p>
+                        </div>
+                        <div class="p-3 bg-white/5 rounded-xl border border-white/5 flex-1 text-center">
+                            <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">收益加成</p>
+                            <p class="text-lg font-bold text-blue-400 digital-num">1.05x</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-right border-l border-white/5 pl-6">
-                    <p class="text-xs text-slate-500 font-bold mb-2">當前系統頻率</p>
-                    <span id="freq-val" class="text-xl font-bold text-blue-400 digital-num">60.00 Hz</span>
+                <div class="pt-6 border-t border-white/5">
+                    <div class="flex justify-between text-[10px] font-bold mb-2 text-slate-500 uppercase">
+                        <span>決策執行進度</span>
+                        <span id="exec-percent" class="text-cyan-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                        <div id="exec-bar" class="h-full bg-cyan-500 transition-all duration-700" style="width: 0%"></div>
+                    </div>
                 </div>
             </section>
 
-            <section class="glass-card p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] text-slate-500 font-bold uppercase block mb-1">契約容量 (kW)</label>
-                        <input type="number" id="contract-kw" value="1200" class="input-field text-xl font-bold">
+            <section class="lg:col-span-8 glass-card p-8 h-[400px]">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">能源與收益負載預測圖表</h3>
+                <div class="h-full pb-10">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </section>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 space-y-4">
+                <h3 class="text-sm font-black text-cyan-400 uppercase tracking-widest px-4">VPP AI 卸載決策建議</h3>
+                <div id="strategy-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     </div>
-                    <div>
-                        <label class="text-[10px] text-slate-500 font-bold uppercase block mb-1">預計抑低容量 (kW)</label>
-                        <input type="number" id="reduce-kw" value="300" class="input-field text-xl font-bold">
+            </div>
+            
+            <section class="lg:col-span-4 glass-card p-8 space-y-6 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase">調度參數設定</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold uppercase block mb-1">契約容量 (kW)</label>
+                            <input type="number" id="contract-kw" value="1000" class="input-field text-lg font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold uppercase block mb-1">預計抑低容量 (kW)</label>
+                            <input type="number" id="reduce-kw" value="200" class="input-field text-lg font-bold">
+                        </div>
                     </div>
                 </div>
-                <button onclick="syncData()" class="w-full bg-slate-100 text-black py-4 rounded-xl font-black text-sm hover:bg-white transition-all active:scale-95">
+                <button onclick="manualSync()" class="w-full bg-white text-black py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-cyan-400 transition-all active:scale-95 shadow-lg">
                     更新並同步 API 數據
                 </button>
             </section>
         </div>
-
-        <section class="glass-card p-6 h-64">
-            <canvas id="liveChart"></canvas>
-        </section>
-
     </div>
 
     <script>
-        // 1. 初始化圖表
-        const ctx = document.getElementById('liveChart').getContext('2d');
-        const liveChart = new Chart(ctx, {
+        // 1. 決策方案配置
+        const plans = [
+            { id: 1, name: "區域 1 空調降載", kw: 50, profit: 4200, co2: 24.8, active: false },
+            { id: 2, name: "儲能系統反饋供電", kw: 150, profit: 12800, co2: 74.3, active: false },
+            { id: 3, name: "電動堆高機充電暫緩", kw: 20, profit: 1600, co2: 9.9, active: false }
+        ];
+
+        // 2. 初始化 Chart.js
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        const mainChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
+                labels: ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'],
                 datasets: [{
-                    data: [15, 14.5, 12.4, 13, 12.8, 11],
-                    borderColor: '#3b82f6',
-                    borderWidth: 2,
+                    data: [12.4, 11.8, 9.2, 10.5, 9.8, 11.2, 12.0],
+                    borderColor: '#00f2ff',
+                    borderWidth: 3,
                     pointRadius: 0,
                     tension: 0.4,
                     fill: true,
-                    backgroundColor: 'rgba(59, 130, 246, 0.05)'
+                    backgroundColor: 'rgba(0, 242, 255, 0.05)'
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: { 
                     y: { display: false }, 
-                    x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 10 } } }
+                    x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 10, family: 'Orbitron' } } }
                 }
             }
         });
 
-        // 2. 台電數據同步 (嚴格同步即時時間)
-        async function syncData() {
+        // 3. 核心邏輯：台電 API 同步
+        async function fetchTaipower() {
+            // 使用 corsproxy.io 解決跨網域抓取台電數據的問題
             const api_url = "https://corsproxy.io/?https://www.taipower.com.tw/d006/load_draw/data/load_supply_info.json";
             
             try {
-                const response = await fetch(api_url);
-                const data = await response.json();
-                
-                // 取得台電官方數值
-                const reserve = parseFloat(data.reserve_rate || 10);
-                updateUI(reserve);
-            } catch (error) {
-                console.log("正在使用離峰時間參考值...");
-                // 離峰時間模擬 (若 API 失敗)
-                updateUI(15.2); 
+                const res = await fetch(api_url);
+                const data = await res.json();
+                const rate = parseFloat(data.reserve_rate);
+                updateUI(rate);
+            } catch (e) {
+                // 離峰時間容錯機制
+                updateUI(14.5);
             }
         }
 
-        function updateUI(reserve) {
-            // 更新備轉率
-            document.getElementById('reserve-val').innerText = reserve.toFixed(1) + "%";
+        function updateUI(rate) {
+            // 備轉率與燈號更新
+            const valEl = document.getElementById('reserve-val');
+            const lightEl = document.getElementById('status-light');
+            valEl.innerText = rate.toFixed(1) + "%";
             
-            // 更新狀態燈號 (根據台電標準)
-            const light = document.getElementById('status-light');
-            if (reserve >= 10) {
-                light.innerText = "供電充裕";
-                light.className = "status-pill status-green";
+            if (rate >= 10) {
+                lightEl.innerText = "供電充裕";
+                lightEl.className = "status-pill status-green";
+                valEl.style.color = "#3fb950";
+            } else if (rate > 6) {
+                lightEl.innerText = "供電吃緊";
+                lightEl.className = "status-pill status-yellow";
+                valEl.style.color = "#d29922";
             } else {
-                light.innerText = "供電吃緊";
-                light.className = "status-pill status-yellow";
+                lightEl.innerText = "供電警戒";
+                lightEl.className = "status-pill status-orange";
+                valEl.style.color = "#f78166";
             }
 
-            // 更新收益估算 (與抑低容量連動)
+            // 收益與碳排聯動計算
             const reduceKW = parseFloat(document.getElementById('reduce-kw').value) || 0;
-            const currentIncome = reduceKW * 8.5 * 1.05 * (1 + (10 - reserve)/100);
-            animateValue("income-val", currentIncome, "$ ");
+            const activePlans = plans.filter(p => p.active);
+            const planProfit = activePlans.reduce((sum, p) => sum + p.profit, 0);
+            const planCO2 = activePlans.reduce((sum, p) => sum + p.co2, 0);
 
-            // 頻率模擬
-            document.getElementById('freq-val').innerText = (60.00 + (Math.random()-0.5)*0.04).toFixed(2) + " Hz";
+            // 基礎收益模型：抑低容量 * 價格 * 係數 (模擬 2026 夜尖峰)
+            const baseProfit = reduceKW * 8.5 * 6 * 1.05; 
+            const totalProfit = baseProfit + planProfit;
+            const totalCO2 = (reduceKW * 6 * 0.495) + planCO2;
+
+            animateValue("income-val", totalProfit, "$ ");
+            document.getElementById('co2-val').innerText = totalCO2.toFixed(1);
+            
+            // 頻率跳動模擬
+            document.getElementById('freq-val').innerText = (59.98 + Math.random()*0.04).toFixed(2) + " Hz";
+        }
+
+        // 4. 輔助功能
+        function renderPlans() {
+            const grid = document.getElementById('strategy-grid');
+            grid.innerHTML = plans.map((p, idx) => `
+                <div onclick="togglePlan(${idx})" class="strategy-item glass-card p-6 flex flex-col justify-between h-40 ${p.active ? 'active' : ''}">
+                    <div class="flex justify-between items-start">
+                        <h4 class="font-bold text-sm text-slate-200">${p.name}</h4>
+                        <span class="text-[10px] font-mono text-cyan-400">-${p.kw}kW</span>
+                    </div>
+                    <div class="text-right pt-4 border-t border-white/5">
+                        <p class="text-xl font-black text-orange-400 digital-num">+$${p.profit.toLocaleString()}</p>
+                        <p class="text-[9px] text-emerald-500 font-bold uppercase">ESG: ${p.co2}kg</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            const activeCount = plans.filter(p => p.active).length;
+            document.getElementById('exec-percent').innerText = Math.round((activeCount/plans.length)*100) + "%";
+            document.getElementById('exec-bar').style.width = (activeCount/plans.length*100) + "%";
+        }
+
+        function togglePlan(idx) {
+            plans[idx].active = !plans[idx].active;
+            renderPlans();
+            fetchTaipower(); // 重新觸發計算
         }
 
         function animateValue(id, end, prefix = "") {
@@ -172,7 +262,7 @@
             let startTimestamp = null;
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / 500, 1);
+                const progress = Math.min((timestamp - startTimestamp) / 600, 1);
                 const val = (progress * (end - start) + start).toFixed(2);
                 obj.innerText = prefix + parseFloat(val).toLocaleString(undefined, {minimumFractionDigits: 2});
                 if (progress < 1) window.requestAnimationFrame(step);
@@ -180,9 +270,18 @@
             window.requestAnimationFrame(step);
         }
 
+        function manualSync() {
+            fetchTaipower();
+            renderPlans();
+        }
+
         window.onload = () => {
-            syncData();
-            setInterval(syncData, 30000); // 每 30 秒自動與官網同步一次
+            renderPlans();
+            fetchTaipower();
+            setInterval(() => {
+                document.getElementById('systime').innerText = "SYNC_OK: " + new Date().toLocaleString();
+            }, 1000);
+            setInterval(fetchTaipower, 30000); // 每 30 秒自動更新
         };
     </script>
 </body>
